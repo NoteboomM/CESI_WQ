@@ -13,7 +13,7 @@
 library(tidyhydat)     # HYDAT access
 library(dplyr)         # for select function
 library(rgdal)         # for readOGR
-library(sp)            # processing spatial data
+# library(sp)            # processing spatial data, loaded as req't of rgdal
 
 ###########     Obtain flow data     ###########
 # If the most recent Hydat.sqlite file is not already in the Packages folder, it will be downloaded.
@@ -36,6 +36,9 @@ if( length( grep("Hydat.sqlite", list.files(hy_file)))==0){
   hy_set_default_db(hydat_path = hy_db)
 }
 
+version <- hy_version(hydat_path = "../Dependencies/Hydat/Hydat.sqlite3")
+version <- substring(version$Date,0,7)
+
 
 ##### List of previously calculated metrics #####
 # List of variable names
@@ -54,7 +57,7 @@ stn.list.full <- as.character(stations$STATION_NUMBER)
 # reference year for snapshot (and end of trends?)
 ref <- 2016
 # reference range for animations
-ref.range <- c(2001:2016)
+ref.range <- c(2001:2019)
 # start year for trend calculations; legacy - can probably be hard-wired below
 trend.minyr <- 1970
 # set aggregate method - mean or median
