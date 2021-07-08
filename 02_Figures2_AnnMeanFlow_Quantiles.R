@@ -25,101 +25,100 @@ percentile.ranked <- function(a.vector, value) {
 
 ##### Creating Summary tables for Metrics  #####
 # for each station, extract the metric in question, then alter by watershed area if needed
-if (file.exists(paste0("../Variables/Summary.",ref,".csv"))){
-  results.all <- read.csv(paste0("../Variables/Summary.", ref, ".csv"), header = TRUE)
+if (file.exists(paste0("../Variables/Summary.AnnMeanYield.csv"))){
+  results.all <- read.csv(paste0("../Variables/Summary.AnnMeanYield.csv"), header = TRUE)
 } else {
   snap <- list()
   for (k in 1:length(stn.list.full)){
+    var.name <- list.var.name[1]
+    var.t <- list.var[1]
+    
     stn <- stn.list.full[k]
     print(stn)
     # load data
     data <- read.csv(paste0("../Variables/", stn, ".csv"), header = TRUE)
     data$station <- as.character(data$station)
     # extract variable of interest
-    q <- data.frame(matrix(ncol=7, nrow=length(list.var), 
+    q <- data.frame(matrix(ncol=7, nrow=1, 
                            dimnames= list(NULL, c("STATION_NUMBER","variable","q25", "q75", "median",
                                                   paste0("result.", ref), "Z"))))
     q$STATION_NUMBER <- stn
-    q$variable <- list.var
-    for (i in 1:length(list.var.name)) {
-      var.name <- list.var.name[i]
-      var.t <- list.var[i]
-      # if variable needs it, scale variable by watershed size. Units will now be in mm/time,
-      # where time is either one year, 7 days, or one day.
-      if (var.t %in% c("ann_mean_yield", "X7_day_min", "X1_day_max")){
-        watershed <- stations[stations$STATION_NUMBER == stn, "Shp_Area"]
-        time <- case_when(var.t ==  "ann_mean_yield"  ~ 365*24*3600,
-                          var.t ==  "X7_day_min"       ~ 7*24*3600,
-                          var.t ==  "X1_day_max"       ~ 1*24*3600)
+    q$variable <- var.t
+    # if variable needs it, scale variable by watershed size. Units will now be in mm/time,
+    # where time is either one year, 7 days, or one day.
 
-        data[[var.t]] <- data[[var.t]]*time/(watershed*10^3) 
-      }
-    }
+    watershed <- stations[stations$STATION_NUMBER == stn, "Shp_Area"]
+    time <-  365*24*3600
+    
+    data[[var.t]] <- data[[var.t]]*time/(watershed*10^3) 
+
     # calculate quantiles, ranks, trends for each variable
     data.ref <- data %>% filter(year>=1981, year<=2010)
     data$yearplot <- NA
     data$yearplot <- case_when( (data$year >= trend.minyr) ~ data$year )
-    for (i in 1:length(list.var.name)) {
-      var.name <- list.var.name[i]
-      var.t <- list.var[i]
-      # calculate the 25th and 75th percentile for the 1981-2010 period for all variables,
-      # provided there are at least 20 years of data within that period.
-      if (sum(!is.na(data.ref[[var.t]]))>=20){
-        q.var <- quantile(data.ref[[var.t]], c(0.25, 0.75), na.rm=TRUE)
-        median <- median(data[[var.t]], na.rm=TRUE)
-      } else {
-        q.var <- c(NA, NA)
-        median <- NA
-      }
-      goodyears <- data$yearplot[!is.na(data$yearplot) & !is.na(data[[var.t]])]
-      gap.check <- goodyears - lag(goodyears)
-      q[q$variable==var.t, c("q25", "q75")] <- q.var
-      q[q$variable==var.t, "median"] <- median
-      for (refyear in ref.range){
-        if (refyear %in% data$year){
-          latest <- data[data$year == refyear, var.t]
-          print(paste(refyear, latest))
-        } else {
-          latest <- NA
-        }
-        q[q$variable==var.t, paste0("result.", refyear)] <- latest
-        
-        if (!is.na(latest) & !is.na(median)){
-          q[q$variable==var.t, paste0("rank.", refyear)] <- percentile.ranked(data.ref[[var.t]], latest)
-        } else {
-          q[q$variable==var.t, paste0("rank.", refyear)] <- NA
-        }
-      }
-      
-      q[q$STATION_NUMBER==stn & q$variable==var.t, "first.year"] <- min(data$year, na.rm = TRUE)
-      q[q$STATION_NUMBER==stn & q$variable==var.t, "last.year"] <- max(data$yearplot,na.rm = TRUE)
-      
-      # check for trends and add to 'q'
-      if (nrow(data[!is.na(data[[var.t]]),]) >= 10 & sd(data[[var.t]], na.rm = TRUE) > 0){
-        x<- data$year[!is.na(data[[var.t]]) & data$year>=trend.minyr]
-        y<- data[[var.t]][!is.na(data[[var.t]]) & data$year>=trend.minyr]
-        trend.n <- length(x)
-        if (any(data$yearplot %in% c(1970:1975)) & (length(goodyears) >= 30) 
-            & (max(gap.check[!is.na(gap.check)]) <= 11) & (sd(y,na.rm=TRUE)!=0) 
-            & var.t!= "pot_events" & var.t!="dr_events" & all(data[[var.t]][!is.na(data[[var.t]])]>=0.001)){
-          sen <- zyp.sen(y~x)
-          corr<- cor.test(y, x, method = "kendall", alternative = "two.sided", exact = FALSE)
-          Z <-corr$statistic[["z"]]
-          msen <- sen$coefficients[[2]]
-          bsen <- sen$coefficients[[1]]
-          data$trendsen <- msen*data$year + bsen
-        } else {
-          Z <- NA
-          msen <- NA
-          bsen <- NA
-        }
-        q[q$STATION_NUMBER==stn & q$variable==var.t, "Z"] <- Z
-        q[q$STATION_NUMBER==stn & q$variable==var.t, "msen"] <- msen
-        q[q$STATION_NUMBER==stn & q$variable==var.t, "bsen"] <- bsen
-        q[q$STATION_NUMBER==stn & q$variable==var.t, "years.for.trend"] <- trend.n
-      } 
-      
+
+    # calculate the 25th and 75th percentile for the 1981-2010 period,
+    # provided there are at least 20 years of data within that period.
+    if (sum(!is.na(data.ref[[var.t]]))>=20){
+      q.var <- quantile(data.ref[[var.t]], c(0.25, 0.75), na.rm=TRUE)
+      median <- median(data[[var.t]], na.rm=TRUE)
+    } else {
+      q.var <- c(NA, NA)
+      median <- NA
     }
+    goodyears <- data$yearplot[!is.na(data$yearplot) & !is.na(data[[var.t]])]
+    gap.check <- goodyears - lag(goodyears)
+    q[q$variable==var.t, c("q25", "q75")] <- q.var
+    q[q$variable==var.t, "median"] <- median
+    
+    results <- list()
+    ranks <- list()
+    
+    for (refyear in ref.range){
+      if (refyear %in% data$year){
+        latest <- data[data$year == refyear, var.t]
+        print(paste(refyear, latest))
+      } else {
+        latest <- NA
+      }
+      q[q$variable==var.t, paste0("result.", refyear)] <- latest
+      
+      if (!is.na(latest) & !is.na(median)){
+        q[q$variable==var.t, paste0("rank.", refyear)] <- percentile.ranked(data.ref[[var.t]], latest)
+      } else {
+        q[q$variable==var.t, paste0("rank.", refyear)] <- NA
+      }
+    }
+    
+    q[q$STATION_NUMBER==stn & q$variable==var.t, "first.year"] <- min(data$year, na.rm = TRUE)
+    q[q$STATION_NUMBER==stn & q$variable==var.t, "last.year"] <- max(data$yearplot,na.rm = TRUE)
+    
+    # check for trends and add to 'q'
+    if (nrow(data[!is.na(data[[var.t]]),]) >= 10 & sd(data[[var.t]], na.rm = TRUE) > 0){
+      x<- data$year[!is.na(data[[var.t]]) & data$year>=trend.minyr]
+      y<- data[[var.t]][!is.na(data[[var.t]]) & data$year>=trend.minyr]
+      trend.n <- length(x)
+      if (any(data$yearplot %in% c(1970:1975)) & (length(goodyears) >= 30) 
+          & (max(gap.check[!is.na(gap.check)]) <= 11) & (sd(y,na.rm=TRUE)!=0) 
+          & var.t!= "pot_events" & var.t!="dr_events" & all(data[[var.t]][!is.na(data[[var.t]])]>=0.001)){
+        sen <- zyp.sen(y~x)
+        corr<- cor.test(y, x, method = "kendall", alternative = "two.sided", exact = FALSE)
+        Z <-corr$statistic[["z"]]
+        msen <- sen$coefficients[[2]]
+        bsen <- sen$coefficients[[1]]
+        data$trendsen <- msen*data$year + bsen
+      } else {
+        Z <- NA
+        msen <- NA
+        bsen <- NA
+      }
+      q[q$STATION_NUMBER==stn & q$variable==var.t, "Z"] <- Z
+      q[q$STATION_NUMBER==stn & q$variable==var.t, "msen"] <- msen
+      q[q$STATION_NUMBER==stn & q$variable==var.t, "bsen"] <- bsen
+      q[q$STATION_NUMBER==stn & q$variable==var.t, "years.for.trend"] <- trend.n
+    } 
+    
+  
     snap[[k]] <- q
   }
   # Combine stations

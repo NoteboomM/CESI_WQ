@@ -12,8 +12,8 @@
 ###########      Library             ###########
 library(tidyhydat)     # HYDAT access
 library(dplyr)         # for select function
+library(sp)            # processing spatial data, loaded as req't of rgdal
 library(rgdal)         # for readOGR
-# library(sp)            # processing spatial data, loaded as req't of rgdal
 
 ###########     Obtain flow data     ###########
 # If the most recent Hydat.sqlite file is not already in the Packages folder, it will be downloaded.
@@ -55,7 +55,7 @@ list.var.name <- c("Annual Mean Yield", "Number of Flood Days", "Number of Flood
 stations <- read.csv("../Dependencies/RHBN_U.csv", header = TRUE)
 stn.list.full <- as.character(stations$STATION_NUMBER)
 # reference year for snapshot (and end of trends?)
-ref <- 2016
+ref <- 2019
 # reference range for animations
 ref.range <- c(2001:2019)
 # start year for trend calculations; legacy - can probably be hard-wired below
