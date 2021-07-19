@@ -39,9 +39,8 @@ if (file.exists(paste0("../Variables/Summary.AnnMeanYield.csv"))){
     data <- read.csv(paste0("../Variables/", stn, ".csv"), header = TRUE)
     data$station <- as.character(data$station)
     # extract variable of interest
-    q <- data.frame(matrix(ncol=7, nrow=1, 
-                           dimnames= list(NULL, c("STATION_NUMBER","variable","q25", "q75", "median",
-                                                  paste0("result.", ref), "Z"))))
+    q <- data.frame(matrix(ncol=5, nrow=1, 
+                           dimnames= list(NULL, c("STATION_NUMBER","variable","q25", "q75", "median"))))
     q$STATION_NUMBER <- stn
     q$variable <- var.t
     # if variable needs it, scale variable by watershed size. Units will now be in mm/time,
@@ -77,11 +76,11 @@ if (file.exists(paste0("../Variables/Summary.AnnMeanYield.csv"))){
     for (refyear in ref.range){
       if (refyear %in% data$year){
         latest <- data[data$year == refyear, var.t]
-        print(paste(refyear, latest))
+        print(refyear)
       } else {
         latest <- NA
       }
-      q[q$variable==var.t, paste0("result.", refyear)] <- latest
+      q[q$variable==var.t, paste0("res.", refyear)] <- latest # abbreviated names for shp export
     }
     for (refyear in ref.range){
       if (refyear %in% data$year){
@@ -90,9 +89,9 @@ if (file.exists(paste0("../Variables/Summary.AnnMeanYield.csv"))){
         latest <- NA
       }
       if (!is.na(latest) & !is.na(median)){
-        q[q$variable==var.t, paste0("rank.", refyear)] <- percentile.ranked(data.ref[[var.t]], latest)
+        q[q$variable==var.t, paste0("rk.", refyear)] <- as.integer(percentile.ranked(data.ref[[var.t]], latest))
       } else {
-        q[q$variable==var.t, paste0("rank.", refyear)] <- NA
+        q[q$variable==var.t, paste0("rk.", refyear)] <- NA # abbreviated names for shp export
       }
     }
     
