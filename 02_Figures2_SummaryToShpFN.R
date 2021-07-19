@@ -8,8 +8,10 @@ summary.to.shp <- function(summary.data, metric, path.shp){
 
   print(var2)
   
-  metricdata <- left_join(stn_data,Ind.2016.r,by="STATION_NUMBER")
-  metricdata <- metricdata[metricdata$variable == var2,]
+  metricdata <- left_join(stn_data,summary.data,by="STATION_NUMBER")
+  
+  # print(paste("stn_xy:",nrow(stn_xy), "metricdata:", nrow(metricdata)))
+  
   metricplot <- SpatialPointsDataFrame(coords = stn_xy, data = metricdata,
                                      proj4string = crs_wgs)
   metricplot <- sp::spTransform(metricplot, CRSobj = crs)
