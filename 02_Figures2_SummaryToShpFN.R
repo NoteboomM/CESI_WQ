@@ -3,6 +3,8 @@
 # # a shapefile for GIS.
 
 summary.to.shp <- function(summary.data, metric, path.shp){
+  
+  library(sp)
 
   var2 <- metric
 
@@ -14,7 +16,7 @@ summary.to.shp <- function(summary.data, metric, path.shp){
   
   metricplot <- SpatialPointsDataFrame(coords = stn_xy, data = metricdata,
                                      proj4string = crs_wgs)
-  metricplot <- sp::spTransform(metricplot, CRSobj = crs)
+  metricplot <- spTransform(metricplot, CRSobj = crs)
   
   outstring <- paste0(path.shp, "/RHBN_U_pts_", metric, "_Hydat_", version, ".shp")
 
