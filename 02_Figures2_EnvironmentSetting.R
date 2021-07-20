@@ -10,7 +10,7 @@
 ###################################################################################################
 
 ###########      Library             ###########
-library(tidyhydat)     # HYDAT access
+# library(tidyhydat)     # HYDAT access
 library(dplyr)         # for select function
 library(sp)            # processing spatial data, loaded as req't of rgdal
 library(rgdal)         # for readOGR
