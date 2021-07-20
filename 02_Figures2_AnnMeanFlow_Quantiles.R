@@ -12,6 +12,7 @@ library(dplyr)     # For data tidying and data tables
 library(tidyr)     # For data tidying
 library(zyp)       # For applying trend tests
 source('02_Figures2_SummaryToShpFN.R')  # Sourcing function for shapefile output
+source('Function_chk_hydat.R')
 
 #########  Function:percentile.ranked  #########
 # percentile.ranked find the percentile rank of reference year compared to 
@@ -22,6 +23,9 @@ percentile.ranked <- function(a.vector, value) {
   denominator <- length(a.vector)
   round(numerator/denominator,2)*100 
 }
+
+chk.hydat("../Dependencies/Hydat")
+
 
 ##### Creating Summary tables for Metrics  #####
 # for each station, extract the metric in question, then alter by watershed area if needed
