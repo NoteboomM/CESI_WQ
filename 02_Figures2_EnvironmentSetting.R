@@ -14,6 +14,7 @@
 library(dplyr)         # for select function
 library(sp)            # processing spatial data, loaded as req't of rgdal
 library(rgdal)         # for readOGR
+source('Function_chk_hydat.R')
 
 ###########     Obtain flow data     ###########
 # If the most recent Hydat.sqlite file is not already in the Packages folder, it will be downloaded.
@@ -23,21 +24,8 @@ library(rgdal)         # for readOGR
 # Keeping a file folder with old Hydat versions to be able to reproduce old work is highly suggested
 # ***Make sure Dependencies folder exists. ***
 # set hydat location, download if not found
-hy_file <- "../Dependencies/Hydat"
-if( length( grep("Hydat.sqlite", list.files(hy_file)))==0){
-  # hydat file will be downloaded in dependencies and subsequent tidyhydat calls will use this file
-  # Highly suggest keeping a file folder with old Hydat versions to be able to reproduce old work
-  download_hydat(dl_hydat_here = hy_file)
-  hy_db <- paste0(hy_file, "/Hydat.sqlite3")
-  hy_set_default_db(hydat_path = hy_db)
-  
-} else {
-  hy_db <- paste0(hy_file, "/Hydat.sqlite3")
-  hy_set_default_db(hydat_path = hy_db)
-}
 
-version <- hy_version(hydat_path = "../Dependencies/Hydat/Hydat.sqlite3")
-version <- substring(version$Date,0,7)
+chk.hydat("../Dependencies/Hydat")
 
 
 ##### List of previously calculated metrics #####
@@ -62,7 +50,6 @@ ref.range <- c(2001:2019)
 trend.minyr <- 1970
 # set aggregate method - mean or median
 aggmethod <- "median"
-
 
 ############ Loading Geospatial Data ############
 # load geospatial data up front
