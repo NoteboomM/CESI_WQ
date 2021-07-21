@@ -11,7 +11,7 @@
 library(dplyr)     # For data tidying and data tables     
 library(tidyr)     # For data tidying
 library(zyp)       # For applying trend tests
-source('02_Figures2_SummaryToShpFN.R')  # Sourcing function for shapefile output
+source('Function_SummaryToShpFN.R')  # Sourcing function for shapefile output
 source('Function_chk_hydat.R')
 
 #########  Function:percentile.ranked  #########
