@@ -19,9 +19,9 @@ stations <- read.csv("../Dependencies/RHBN_U.csv", header = TRUE)
 list <-as.character(stations$STATION_NUMBER)
 ### Prompt to get the metric name
 var_list = c("ann_mean_yield",
-  "pot_days", "pot_events",  "pot_max_dur",
-  "X1_day_max", "dr_days", "dr_events", "dut_max_dur",
-  "X7_day_min")
+  "pot_days")#, "pot_events",  "pot_max_dur",
+  # "X1_day_max", "dr_days", "dr_events", "dut_max_dur",
+  # "X7_day_min")
 result_list = paste0(var_list, "_trend")
 #var_list = c("X7_day_min")
 # Use this when testing single variable
@@ -58,6 +58,7 @@ for (j in 1:length(var_list)){
     years.for.trend <- NA
     CATTrend <- NA
     test <- NA
+    mapslope <- NA
     
     data <- read.csv(output1, header = TRUE)
     if (sum(!is.na(data[[var.t]]))>=30){
@@ -98,11 +99,13 @@ for (j in 1:length(var_list)){
           CATTrend <- pass
         }
       }
-    } 
+    }
+    mapslope <- case_when( grepl("Likely", CATTrend)    ~ slope,
+                           grepl("Confident", CATTrend) ~ slope)
     # Load data and subset
-    snap[[i]] <- data.frame(station=stn.id, slope=slope, intercept=intercept,
+    snap[[i]] <- data.frame(STATION_NUMBER=stn.id, slope=slope, intercept=intercept,
                             years.for.trend=years.for.trend,
-                            CATTrend=CATTrend, test=test)
+                            CATTrend=CATTrend, test=test, mapslope=mapslope)
   }
   snap.all <- bind_rows(snap)
   #if (file.exists(output1)){
@@ -110,6 +113,7 @@ for (j in 1:length(var_list)){
   #}
   #write.csv(snap.all, output_name, row.names = FALSE)
   assign(result_list[j], snap.all)
+  summary.to.shp(snap.all, paste0(var.t,"_trend"), "../../../00_Shapefiles")
   snap <-list()
 }
 
