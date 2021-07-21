@@ -20,7 +20,7 @@ chk.hydat <- function(hydat.path = NULL){
     
   } else {
 
-        hy_set_default_db(hydat_path = hy_file)
+    hy_set_default_db(hydat_path = hy_file)
     
   }
   

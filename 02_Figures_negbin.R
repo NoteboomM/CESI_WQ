@@ -17,7 +17,8 @@ negbin <- function(v){
       pass <<- ifelse(all(low<=1, hi>=1),"Uncertain", "Likely")
     }
     # Get slope from negative binomial
-    fitted <<- unname(model$fitted.values)
+    # fitted <<- unname(model$fitted.values)
+    assign("fitted", unname(model$fitted.values), envir = globalenv())
     slope <<- round((fitted[length(fitted)] - fitted[1])/
                       (max(data.p$year) - min(data.p$year)),2)
     intercept <<- round((fitted[1]-min(data.p$year)*((fitted[length(fitted)] - fitted[1])/

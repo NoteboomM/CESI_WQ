@@ -32,7 +32,8 @@
       
       # Get slope and intercept from hurdle
       model <- hurdle(data.p[[v]]~data.p$year, dist="negbin", zero.dist = "binomial", link = "logit")
-      fitted <- unname(model$fitted.values)
+      # fitted <- unname(model$fitted.values)
+      assign("fitted", unname(model$fitted.values), envir = globalenv())
       slope <<- round((fitted[length(fitted)] - fitted[1])/
                         (max(data.p$year) - min(data.p$year)),2)
       intercept <<- round((fitted[1]-min(data.p$year)*((fitted[length(fitted)] - fitted[1])/

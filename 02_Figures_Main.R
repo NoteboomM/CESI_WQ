@@ -37,6 +37,10 @@ library("MASS")
 # might be a better way to do this; there's no point in reinstalling every time...
 library("countreg")
 library("zyp")
+source('02_Figures_mk_test.R')
+source('02_Figures_hurdle.R')
+source('02_Figures_negbin.R')
+
 ###############################################
 
 for (j in 1:length(var_list)){
@@ -69,29 +73,32 @@ for (j in 1:length(var_list)){
         
         # Are there any zero values?
         if((sum(data.p[[var.t]]==0)<3)&(var.t %in% c("X1_day_max", "ann_mean_yield", "X7_day_min"))){
+          print("Mann-Kendall test")
           mk_test(var.t)
-          }else{
-            # Is hurdle necessary?
-            model2 <- tryCatch(hurdle(var.t~year, data.p, dist="negbin", zero.dist = "negbin"),
-                               error=function(e){return("A")}, warning=function(w){return("B")})
-            
-            hurdle<- FALSE #default to False
-            if(!is.character(model2)){
-              if(!is.nan(hurdletest(model2)[2,4])){
-                hurdle <- ifelse(hurdletest(model2)[2,4]>0.1, TRUE, FALSE)
-              }
+        }else{
+          # Is hurdle necessary?
+          model2 <- tryCatch(hurdle(var.t~year, data.p, dist="negbin", zero.dist = "negbin"),
+                             error=function(e){return("A")}, warning=function(w){return("B")})
+          
+          hurdle <- FALSE #default to False
+          if(!is.character(model2)){
+            if(!is.nan(hurdletest(model2)[2,4])){
+              hurdle <- ifelse(hurdletest(model2)[2,4]>0.1, TRUE, FALSE)
             }
-            if(hurdle){
-              #Apply the hurdle model
-              hurdle_test(var.t)
-            } else {
-              #Apply the negative binomial model
-              negbin(var.t)
-            }
-            CATTrend <- pass
           }
+          if(hurdle){
+            #Apply the hurdle model
+            print("Hurdle test")
+            hurdle_test(var.t)
+          } else {
+            #Apply the negative binomial model
+            print("Negative Binomial test")
+            negbin(var.t)
+          }
+          CATTrend <- pass
         }
-      } 
+      }
+    } 
     # Load data and subset
     snap[[i]] <- data.frame(station=stn.id, slope=slope, intercept=intercept,
                             years.for.trend=years.for.trend,
