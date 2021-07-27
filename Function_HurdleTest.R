@@ -4,7 +4,7 @@
 # on Hurdle Test.
 ###################################################################################################
 
-  hurdle_test <- function(v){
+  hurdle.test <- function(v){
     # Are we confident there is a trend?
     # Count portion of hurdle
     data.c <- data.p[data.p[[v]]>0,]

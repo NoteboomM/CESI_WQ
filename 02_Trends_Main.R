@@ -1,9 +1,10 @@
 ###################################################################################################
 # CESI project-Trend Test
 # Before running this code, make sure that you have access to the following:
-# 02_Figures_MK.R
-# 02_Figures_Negbin.R
-# 02_Figures_Hurdle.R
+# Function_MKTest.R
+# Function_NegBinTest.R
+# Function_HurdleTest.R
+# Function_SummaryToShp.R
 #
 # This part of the code aims at finding both the existence and magnitude of trend within 
 # metrics calculated in part 01. While normally Mann-Kendall Test is used normally, 
@@ -18,10 +19,8 @@
 stations <- read.csv("../Dependencies/RHBN_U.csv", header = TRUE)
 list <-as.character(stations$STATION_NUMBER)
 ### Prompt to get the metric name
-var_list = c("ann_mean_yield",
-  "pot_days")#, "pot_events",  "pot_max_dur",
-  # "X1_day_max", "dr_days", "dr_events", "dut_max_dur",
-  # "X7_day_min")
+var_list = c("ann_mean_yield", "pot_days")#, "pot_events",  "pot_max_dur",
+  # "X1_day_max", "dr_days", "dr_events", "dut_max_dur", "X7_day_min")
 result_list = paste0(var_list, "_trend")
 #var_list = c("X7_day_min")
 # Use this when testing single variable
@@ -37,9 +36,10 @@ library("MASS")
 # might be a better way to do this; there's no point in reinstalling every time...
 library("countreg")
 library("zyp")
-source('02_Figures_mk_test.R')
-source('02_Figures_hurdle.R')
-source('02_Figures_negbin.R')
+source('Function_MKTest.R')
+source('Function_NegBinTest.R')
+source('Function_HurdleTest.R')
+source('Function_SummaryToShp.R')
 
 ###############################################
 
@@ -75,7 +75,7 @@ for (j in 1:length(var_list)){
         # Are there any zero values?
         if((sum(data.p[[var.t]]==0)<3)&(var.t %in% c("X1_day_max", "ann_mean_yield", "X7_day_min"))){
           print("Mann-Kendall test")
-          mk_test(var.t)
+          mk.test(var.t)
         }else{
           # Is hurdle necessary?
           model2 <- tryCatch(hurdle(var.t~year, data.p, dist="negbin", zero.dist = "negbin"),
@@ -90,7 +90,7 @@ for (j in 1:length(var_list)){
           if(hurdle){
             #Apply the hurdle model
             print("Hurdle test")
-            hurdle_test(var.t)
+            hurdle.test(var.t)
           } else {
             #Apply the negative binomial model
             print("Negative Binomial test")
@@ -100,6 +100,7 @@ for (j in 1:length(var_list)){
         }
       }
     }
+    # mapslope field only has values for likely/confident trends for mapping
     mapslope <- case_when( grepl("Likely", CATTrend)    ~ slope,
                            grepl("Confident", CATTrend) ~ slope)
     # Load data and subset

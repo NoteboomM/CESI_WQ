@@ -7,7 +7,7 @@
 # 1. Some data exists within the range 1970-1975, contains >=30 points, no gap over 10 years;
 # 2. Contains less than 3 zeros
 ###################################################################################################
-mk_test <-function(v){
+mk.test <-function(v){
   y <- data.p[[v]]
   x <- data.p$year
   sen <- zyp.sen(y~x)
