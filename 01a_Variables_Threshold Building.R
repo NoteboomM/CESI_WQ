@@ -30,42 +30,49 @@ stations <- read.csv("../Dependencies/RHBN_U.csv", header = TRUE)
 list <-as.character(stations$STATION_NUMBER)
 Upper = c()
 Lower = c()
-for (i in 1:length(list)){
-  stn.id <- list[i]
-  flow.daily <- hy_daily_flows(stn.id)
-  flow.daily$Year = substr(flow.daily$Date, 1, 4)
-  ref <- flow.daily %>% filter(Year>=1981, Year<=2010)
-  summ = ref %>% group_by(Year) %>% summarise(count=length(Value[!is.na(Value)]))
-  if (length(summ$Year)<20 | length(summ$count[summ$count>=150])<length(summ$count)){
-    Upper=append(Upper, NA)
-    Lower=append(Lower, NA)
-    print(paste0(stn.id, "---not enough data"))
-  }else{
-    Upper_All=ref$Value
-    for (i in 1:length(Upper_All)){
-      if (is.na(Upper_All[i])){
-        Upper_All[i]=0
+
+if (file.exists("../Dependencies/Threshold_New.csv")){
+  Threshold <- read.csv("../Dependencies/Threshold_New.csv", header = TRUE)
+  print("Thresholds loaded")
+} else {
+  print("Calculating thresholds...")
+  for (i in 1:length(list)){
+    stn.id <- list[i]
+    flow.daily <- hy_daily_flows(stn.id)
+    flow.daily$Year = substr(flow.daily$Date, 1, 4)
+    ref <- flow.daily %>% filter(Year>=1981, Year<=2010)
+    summ = ref %>% group_by(Year) %>% summarise(count=length(Value[!is.na(Value)]))
+    if (length(summ$Year)<20 | length(summ$count[summ$count>=150])<length(summ$count)){
+      Upper=append(Upper, NA)
+      Lower=append(Lower, NA)
+      print(paste0(stn.id, "---not enough data"))
+    }else{
+      Upper_All=ref$Value
+      for (i in 1:length(Upper_All)){
+        if (is.na(Upper_All[i])){
+          Upper_All[i]=0
+        }
       }
+      yr=summ$Year
+      num_leap_yrs=length(yr[as.numeric(yr)%%4==0])
+      total_length=length(yr)*365+num_leap_yrs
+      Upper_All=append(Upper_All, rep.int(0, total_length-length(Upper_All)))
+      
+      Lower_All=c()
+      # First B day
+      flow.daily$Month = as.numeric(format(flow.daily$Date, "%m"))
+      for (i in 1:length(summ$Year)){
+        year.op=summ$Year[i]
+        bday_calculation(year.op)
+        Value_within=(ref %>% filter(as.Date(Date)>=as.Date(lastbday.long)&as.Date(Date)<=as.Date(firstbday.long)))$Value
+        Value_within=Value_within[Value_within!=0]
+        Lower_All=append(Lower_All, Value_within)
+      }
+      Upper=append(Upper,quantile(Upper_All, probs = 0.95, names = FALSE, na.rm = TRUE))
+      Lower=append(Lower,quantile(Lower_All, probs = 0.05, names = FALSE, na.rm = TRUE))
+      print(paste(stn.id,"Threshold calculated"))
     }
-    yr=summ$Year
-    num_leap_yrs=length(yr[as.numeric(yr)%%4==0])
-    total_length=length(yr)*365+num_leap_yrs
-    Upper_All=append(Upper_All, rep.int(0, total_length-length(Upper_All)))
-    
-    Lower_All=c()
-    # First B day
-    flow.daily$Month = as.numeric(format(flow.daily$Date, "%m"))
-    for (i in 1:length(summ$Year)){
-      year.op=summ$Year[i]
-      bday_calculation(year.op)
-      Value_within=(ref %>% filter(as.Date(Date)>=as.Date(lastbday.long)&as.Date(Date)<=as.Date(firstbday.long)))$Value
-      Value_within=Value_within[Value_within!=0]
-      Lower_All=append(Lower_All, Value_within)
-    }
-    Upper=append(Upper,quantile(Upper_All, probs = 0.95, names = FALSE, na.rm = TRUE))
-    Lower=append(Lower,quantile(Lower_All, probs = 0.05, names = FALSE, na.rm = TRUE))
-    print(stn.id)
   }
+  Threshold = data.frame(STATION_NUMBER = list, Q95=Upper, Q5=Lower)
+  write.csv(Threshold, file = "../Dependencies/Threshold_New.csv", row.names = FALSE)
 }
-Threshold = data.frame(STATION_NUMBER = list, Q95=Upper, Q5=Lower)
-write.csv(Threshold, file = "../Dependencies/Threshold_New.csv", row.names = FALSE)

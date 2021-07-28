@@ -31,7 +31,7 @@
 ###################################################################################################
 
 ###########      Library&Source      ###########
-library(tidyhydat) # HYDAT access
+# library(tidyhydat) # HYDAT access
 library(dplyr)     # For data tidying and data tables     
 library(tidyr)     # for data tidying
 library(zoo)       # For working with time series
@@ -69,9 +69,15 @@ flow_calendar <- function(id, year){
   #flow.dates = flow.daily %>% filter(Year == year)
   print(year)  #Keep track of the process when writing output
   
+  if (file.exists(output1)){
+    appendflag <- T
+  } else {
+    appendflag <- F
+  }
+  
   if (nrow(flow.dates%>%filter(!is.na(Value)))<150){
     cat(paste(id, year, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, sep=","), 
-        file = output1, append = T, fill = T)
+        file = output1, append = appendflag, fill = T)
   }else{  
     if (nrow(flow.dates%>%filter(!is.na(Value))) > 0.9 * ifelse(flow.dates$Year[1]%%4==0, 366, 365)){
     ann_mean_yield <- flow.dates %>% mutate(mean_flow = mean(Value, na.rm = TRUE))
@@ -114,7 +120,7 @@ flow_calendar <- function(id, year){
     station_row <- Threshold %>% filter(STATION_NUMBER==id)
     if (is.na(station_row$Q95)){
       cat(paste(id, year, ann_mean_yield, NA, NA, NA, NA, max.flow, NA, NA, NA, NA, min7summ, sep=","), 
-          file = output1, append = T, fill = T)
+          file = output1, append = appendflag, fill = T)
     }else{
       threshold <- as.numeric(station_row$Q95)
       # POT function triggers 'computational singularity' warning or error when threshold >=10
@@ -355,11 +361,10 @@ flow_calendar <- function(id, year){
       cat(paste(id, year, ann_mean_yield, pot_threshold, pot_days, 
                 pot_events, pot_max_dur, max.flow, dr_threshold, dr_days,
                 dr_events, dut_max_dur, min7summ, sep=","), 
-          file = output1, append = T, fill = T)
+          file = output1, append = appendflag, fill = T)
     }
   }
 }
-
 
 #### Obtain flow data and calculate hydrological variables ####
 stations <- read.csv("../Dependencies/RHBN_U.csv", header = TRUE)
@@ -375,7 +380,7 @@ for (i in 1:length(list)){
   flow.daily$Year <- as.numeric(format(flow.daily$Date, "%Y"))
   flow.daily$Month<- as.numeric(format(flow.daily$Date, "%m"))  # Change as necessary
   Years <- unique(flow.daily$Year) # All years with any data
-  output1 <- paste("./Variables/", stn.id, ".csv", sep= "")
+  output1 <- paste("../Variables/", stn.id, ".csv", sep= "")
   fileupdate <- FALSE
   if (file.exists(output1)){
     # file.remove(output1) 
@@ -393,16 +398,16 @@ for (i in 1:length(list)){
   }
 
 
-# Add a header to the spreadsheet
-if (!fileupdate){
-  header1 <- read.csv(output1, header = FALSE)
-  print("New file; add header")
-  colnames(header1) <- c("station", "year", "ann_mean_yield", "pot_threshold",
-                         "pot_days", "pot_events",  "pot_max_dur", "1_day_max",
-                         "dr_threshold", "dr_days", "dr_events", "dut_max_dur",
-                         "7_day_min")
-  write.csv(header1, file = output1, row.names = FALSE)
-}
+  # Add a header to the spreadsheet
+  if (!fileupdate){
+    header1 <- read.csv(output1, header = FALSE)
+    print("New file; add header")
+    colnames(header1) <- c("station", "year", "ann_mean_yield", "pot_threshold",
+                           "pot_days", "pot_events",  "pot_max_dur", "1_day_max",
+                           "dr_threshold", "dr_days", "dr_events", "dut_max_dur",
+                           "7_day_min")
+    write.csv(header1, file = output1, row.names = FALSE)
+  }
 }
 # Zhou's comments on this section
 # 1. The variable name is pot.exceed.mean, the output's name is pot_mean_exceedance(removed for now)
