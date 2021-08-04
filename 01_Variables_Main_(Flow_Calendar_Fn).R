@@ -42,6 +42,10 @@ source('Function_chk_hydat.R')  # Sourcing function for hydat setup
 source('01a_Variables_Threshold Building.R')        # Sourcing from the threshold calculation file
 # source('01_Variables_BdayCalculation.R')           # Sourcing from bday_calculation function - already in threshold file?
 
+chk.hydat("../Dependencies/Hydat")
+# area_file <- "../Dependencies/RHBN_NandU_watershedareas.csv"
+# area <- read.table(area_file, sep=',', header=T)
+
 ###########  Function:Flow_Calendar  ###########
 # flow_calendar takes in id and year, and it will
 # calculate and output the 11 metrics representing the station as indicated in stn.years;
@@ -53,10 +57,6 @@ source('01a_Variables_Threshold Building.R')        # Sourcing from the threshol
 # Effects: The function will record all 11 output metrics being calculated and
 # write to a csv file located in the Dependecies file.
 ################################################
-
-chk.hydat("../Dependencies/Hydat")
-area_file <- "../Dependencies/RHBN_NandU_watershedareas.csv"
-area <- read.table(area_file, sep=',', header=T)
 
 flow_calendar <- function(id, year){
   # Identify the station of desire
@@ -307,49 +307,51 @@ flow_calendar <- function(id, year){
           if (length(zero_count)==0){ #i event that last for the entire period
             dr_days=duration$duration
             dr_events=1
-            dur_max_dur=duration$duration
-          } else if (length(zero_count)==1){
-            drevent_count[zero_count[1]]<-"0_1"
-          } else{
-            for ( i in 1:(length(zero_count)-1)){
-              if ((zero_count[i]+1)==zero_count[i+1]){
-                drevent_count[zero_count[i]]<-paste0(as.character(ind), "_", as.character(ind+1))
-              } else{
-                drevent_count[zero_count[i]]<-paste0(as.character(ind), "_", as.character(ind+1))
-                ind<-ind+1
-              }
-              drevent_count[zero_count[length(zero_count)]]<-paste0(as.character(ind), "_", as.character(ind+1))
-            }
-          }
-          dr_filter<-data.frame(volume=vol, dr_event_count=drevent_count)
-          dr_summary<-dr_filter %>% group_by(dr_event_count) %>% summarise(sum=sum(volume))
-          dr_ind_events<-c()
-          if (nrow(duration)>1){
-            for ( i in 1:(nrow(duration)-1)){
-              t <- as.numeric(duration$start[i+1]-duration$end[i])
-              v_above<-(dr_summary %>% filter(dr_event_count==paste0(as.character(i), "_", 
-                                                                     as.character(i+1))))$sum
-              if (any(t>=5, abs(v_above/min(duration$volume[i], duration$volume[i+1]))>=0.1)){
-                dr_ind_events<-append(dr_ind_events, 1)
-              }else{
-                dr_ind_events<-append(dr_ind_events, 0)
+            dut_max_dur=duration$duration
+          } else {
+            if (length(zero_count)==1){
+              drevent_count[zero_count[1]]<-"0_1"
+            } else{
+              for ( i in 1:(length(zero_count)-1)){
+                if ((zero_count[i]+1)==zero_count[i+1]){
+                  drevent_count[zero_count[i]]<-paste0(as.character(ind), "_", as.character(ind+1))
+                } else{
+                  drevent_count[zero_count[i]]<-paste0(as.character(ind), "_", as.character(ind+1))
+                  ind<-ind+1
+                }
+                drevent_count[zero_count[length(zero_count)]]<-paste0(as.character(ind), "_", as.character(ind+1))
               }
             }
-            dr_ind_events<-append(dr_ind_events, 1)
-          }else{
-            dr_ind_events<-c(1)
+            dr_filter<-data.frame(volume=vol, dr_event_count=drevent_count)
+            dr_summary<-dr_filter %>% group_by(dr_event_count) %>% summarise(sum=sum(volume))
+            dr_ind_events<-c()
+            if (nrow(duration)>1){
+              for ( i in 1:(nrow(duration)-1)){
+                t <- as.numeric(duration$start[i+1]-duration$end[i])
+                v_above<-(dr_summary %>% filter(dr_event_count==paste0(as.character(i), "_", 
+                                                                       as.character(i+1))))$sum
+                if (any(t>=5, abs(v_above/min(duration$volume[i], duration$volume[i+1]))>=0.1)){
+                  dr_ind_events<-append(dr_ind_events, 1)
+                }else{
+                  dr_ind_events<-append(dr_ind_events, 0)
+                }
+              }
+              dr_ind_events<-append(dr_ind_events, 1)
+            }else{
+              dr_ind_events<-c(1)
+            }
+            dr_events <- sum(dr_ind_events)
+            dr_max_dur_count <- c()
+            dr_count<-0
+            for (i in 1:length(dr_ind_events)){
+              if (dr_ind_events[i]==1){
+                dr_max_dur_count <- append(dr_max_dur_count, dr_count + duration$duration[i])
+                dr_count <- 0
+              } else { # i.e. in_events[i] == 0
+                dr_count <- dr_count + duration$duration[i]}
+            }
+            dut_max_dur <- max(dr_max_dur_count)
           }
-          dr_events <- sum(dr_ind_events)
-          dr_max_dur_count <- c()
-          dr_count<-0
-          for (i in 1:length(dr_ind_events)){
-            if (dr_ind_events[i]==1){
-              dr_max_dur_count <- append(dr_max_dur_count, dr_count + duration$duration[i])
-              dr_count <- 0
-            } else { # i.e. in_events[i] == 0
-              dr_count <- dr_count + duration$duration[i]}
-          }
-          dut_max_dur <- max(dr_max_dur_count)              
         }    
       } else {
         dr_days <- NA
@@ -403,9 +405,9 @@ for (i in 1:length(list)){
     header1 <- read.csv(output1, header = FALSE)
     print("New file; add header")
     colnames(header1) <- c("station", "year", "ann_mean_yield", "pot_threshold",
-                           "pot_days", "pot_events",  "pot_max_dur", "1_day_max",
+                           "pot_days", "pot_events",  "pot_max_dur", "X1_day_max",
                            "dr_threshold", "dr_days", "dr_events", "dut_max_dur",
-                           "7_day_min")
+                           "X7_day_min")
     write.csv(header1, file = output1, row.names = FALSE)
   }
 }

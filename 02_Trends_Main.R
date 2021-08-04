@@ -18,6 +18,7 @@
 ################ Sourcing from the model building scripts&Setting environment ####################
 stations <- read.csv("../Dependencies/RHBN_U.csv", header = TRUE)
 list <-as.character(stations$STATION_NUMBER)
+
 ### Prompt to get the metric name
 var_list = c("ann_mean_yield", "pot_days")
   #, "pot_events",  "pot_max_dur",
@@ -26,6 +27,9 @@ result_list = paste0(var_list, "_trend")
 #var_list = c("X7_day_min")
 # Use this when testing single variable
 #var.t = 
+# station(s) to exclude due to spurious values:
+pot.exclude <- c("05LH005")
+
 snap <- list()
 ##################################################################################################
 
@@ -44,6 +48,7 @@ source('Function_SummaryToShp.R')
 
 ###############################################
 
+
 for (j in 1:length(var_list)){
   var.t = var_list[j]
   print(var.t)
@@ -60,7 +65,7 @@ for (j in 1:length(var_list)){
     CATTrend <- NA
     test <- NA
     mapslope <- NA
-    
+    area <- stations$Shp_Area[stations$STATION_NUMBER == stn.id]
     data <- read.csv(output1, header = TRUE)
     if (sum(!is.na(data[[var.t]]))>=30){
       data <- data[!is.na(data[[var.t]]),]
@@ -72,6 +77,13 @@ for (j in 1:length(var_list)){
       
       if (all(any(goodyears %in% c(1970:1975)), (length(goodyears) >= 30), 
               (max(gap.check) <= 11))){
+        
+        if (var.t == "ann_mean_yield"){
+          time <- case_when(grepl("yield", var.t) ~ 365*24*3600, # annual mean flow
+                            grepl("X7", var.t) ~   7*24*3600, # 7-day min/max's
+                            grepl("X1", var.t) ~   1*24*3600) # 1 day flows
+          data.p[[var.t]] <- data.p[[var.t]]*time/(area*10^3)
+        }
         
         # Are there any zero values?
         if((sum(data.p[[var.t]]==0)<3)&(var.t %in% c("X1_day_max", "ann_mean_yield", "X7_day_min"))){
@@ -100,6 +112,10 @@ for (j in 1:length(var_list)){
           CATTrend <- pass
         }
       }
+    }
+    if (var.t == "pot_days" & stn.id %in% pot.exclude){
+      print(paste("******** excluding ",stn.id))
+      CATTrend <- NA
     }
     # mapslope field only has values for likely/confident trends for mapping
     mapslope <- case_when( grepl("Likely", CATTrend)    ~ slope,
