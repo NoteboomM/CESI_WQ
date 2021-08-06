@@ -40,7 +40,7 @@ library(purrr)     # function 'possibly' is easiest way to deal with errors
 library(lfstat)    # package for low flow statistics
 source('Function_chk_hydat.R')  # Sourcing function for hydat setup
 source('01a_Variables_Threshold Building.R')        # Sourcing from the threshold calculation file
-# source('01_Variables_BdayCalculation.R')           # Sourcing from bday_calculation function - already in threshold file?
+# source('01a_Variables_BdayCalculation.R')           # Sourcing from bday_calculation function - already in threshold file?
 
 chk.hydat("../Dependencies/Hydat")
 # area_file <- "../Dependencies/RHBN_NandU_watershedareas.csv"
@@ -389,8 +389,8 @@ for (i in 1:length(list)){
     # use this when making changes to past csvs
     fileupdate <- TRUE
     current_dat = read.csv(output1, header=TRUE)
-    Years = Years[(length(current_dat$year)) :(length(Years))]
-    current_dat = current_dat[-(nrow(current_dat)), ] #should remove the last row of data
+    Years = Years[(length(current_dat$year) - 9) :(length(Years))] # set this constant to number of years to recalc - 1
+    current_dat <- head(current_dat, - 10) # remove last 10 years in file, set previous line to one less.
     write.csv(current_dat, output1, row.names=FALSE)
   }
   Year_list=length(Years)
