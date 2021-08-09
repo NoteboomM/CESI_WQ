@@ -16,7 +16,7 @@
 ###################################################################################################
 
 ################ Sourcing from the model building scripts&Setting environment ####################
-stations <- read.csv("../Dependencies/RHBN_U.csv", header = TRUE)
+stations <- read.csv("../Dependencies/RHBN_U.csv", header = TRUE) %>% filter(Use_for_CESI == 1)
 list <-as.character(stations$STATION_NUMBER)
 
 ### Prompt to get the metric name
@@ -27,8 +27,6 @@ result_list = paste0(var_list, "_trend")
 #var_list = c("X7_day_min")
 # Use this when testing single variable
 #var.t = 
-# station(s) to exclude due to spurious values:
-pot.exclude <- c("05LH005")
 
 snap <- list()
 ##################################################################################################
@@ -113,10 +111,7 @@ for (j in 1:length(var_list)){
         }
       }
     }
-    if (var.t == "pot_days" & stn.id %in% pot.exclude){
-      print(paste("******** excluding ",stn.id))
-      CATTrend <- NA
-    }
+
     # mapslope field only has values for likely/confident trends for mapping
     mapslope <- case_when( grepl("Likely", CATTrend)    ~ slope,
                            grepl("Confident", CATTrend) ~ slope)
