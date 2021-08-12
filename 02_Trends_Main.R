@@ -15,22 +15,6 @@
 # well as negative binomial models to help figuring out potential trend for metrics. 
 ###################################################################################################
 
-################ Sourcing from the model building scripts&Setting environment ####################
-stations <- read.csv("../Dependencies/RHBN_U.csv", header = TRUE) %>% filter(Use_for_CESI == 1)
-list <-as.character(stations$STATION_NUMBER)
-
-### Prompt to get the metric name
-var_list = c("ann_mean_yield", "pot_days")
-  #, "pot_events",  "pot_max_dur",
-  # "X1_day_max", "dr_days", "dr_events", "dut_max_dur", "X7_day_min")
-result_list = paste0(var_list, "_trend")
-#var_list = c("X7_day_min")
-# Use this when testing single variable
-#var.t = 
-
-snap <- list()
-##################################################################################################
-
 ################ libraries ####################
 library("dplyr")
 #library("pscl")
@@ -43,8 +27,27 @@ source('Function_MKTest.R')
 source('Function_NegBinTest.R')
 source('Function_HurdleTest.R')
 source('Function_SummaryToShp.R')
+source('Function_chk_hydat.R')  # Sourcing function for hydat setup
+
+chk.hydat("../Dependencies/Hydat")
 
 ###############################################
+
+################ Sourcing from the model building scripts&Setting environment ####################
+stations <- read.csv("../Dependencies/RHBN_U.csv", header = TRUE) %>% filter(Use_for_CESI == 1)
+list <-as.character(stations$STATION_NUMBER)
+
+### Prompt to get the metric name
+var_list = c( "pot_days") #"ann_mean_yield",
+#, "pot_events",  "pot_max_dur",
+# "X1_day_max", "dr_days", "dr_events", "dut_max_dur", "X7_day_min")
+result_list = paste0(var_list, "_trend")
+#var_list = c("X7_day_min")
+# Use this when testing single variable
+#var.t = 
+
+snap <- list()
+##################################################################################################
 
 
 for (j in 1:length(var_list)){
@@ -63,6 +66,7 @@ for (j in 1:length(var_list)){
     CATTrend <- NA
     test <- NA
     mapslope <- NA
+    hurdlechk <- NA
     area <- stations$Shp_Area[stations$STATION_NUMBER == stn.id]
     data <- read.csv(output1, header = TRUE)
     if (sum(!is.na(data[[var.t]]))>=30){
@@ -89,13 +93,16 @@ for (j in 1:length(var_list)){
           mk.test(var.t)
         }else{
           # Is hurdle necessary?
-          model2 <- tryCatch(hurdle(var.t~year, data.p, dist="negbin", zero.dist = "negbin"),
-                             error=function(e){return("A")}, warning=function(w){return("B")})
-          
           hurdle <- FALSE #default to False
-          if(!is.character(model2)){
-            if(!is.nan(hurdletest(model2)[2,4])){
-              hurdle <- ifelse(hurdletest(model2)[2,4]>0.1, TRUE, FALSE)
+          if (sum(data.p[[var.t]]==0) > 0){
+            model2 <- tryCatch(hurdle(data.p[[var.t]]~data.p$year, data.p, dist="negbin", zero.dist = "negbin"),
+                               error=function(e){return(e)}, warning=function(w){return("B")})
+            
+            if(!is.character(model2)){
+              hurdlechk <- hurdletest(model2)[2,4]
+              if(!is.nan(hurdlechk)){
+                hurdle <- ifelse(hurdlechk>0.1, TRUE, FALSE)
+              }
             }
           }
           if(hurdle){
@@ -117,8 +124,8 @@ for (j in 1:length(var_list)){
                            grepl("Confident", CATTrend) ~ slope)
     # Load data and subset
     snap[[i]] <- data.frame(STATION_NUMBER=stn.id, slope=slope, intercept=intercept,
-                            years.for.trend=years.for.trend,
-                            CATTrend=CATTrend, test=test, mapslope=mapslope)
+                            years.for.trend=years.for.trend, CATTrend=CATTrend,
+                            test=test, hurdlechk = hurdlechk, mapslope=mapslope)
   }
   
   snap.all <- bind_rows(snap)

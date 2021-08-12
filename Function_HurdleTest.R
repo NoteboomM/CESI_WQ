@@ -27,7 +27,7 @@
         hi.c <- exp(confint(model.count, level=0.7))[2,2]
         low.z<-exp(confint(model.zero, level=0.7))[2,1]
         hi.z<-exp(confint(model.zero, level=0.7))[2,2]
-        pass <- ifelse(all(low.c*low.z<=1, hi.c*hi.z>=1), "Uncertain", "Likely")
+        pass <<- ifelse(all(low.c*low.z<=1, hi.c*hi.z>=1), "Uncertain", "Likely")
       }
       
       # Get slope and intercept from hurdle
