@@ -38,7 +38,7 @@ stations <- read.csv("../Dependencies/RHBN_U.csv", header = TRUE) %>% filter(Use
 list <-as.character(stations$STATION_NUMBER)
 
 ### Prompt to get the metric name
-var_list = c( "pot_days") #"ann_mean_yield",
+var_list = c( "ann_mean_yield", "pot_days") #
 #, "pot_events",  "pot_max_dur",
 # "X1_day_max", "dr_days", "dr_events", "dut_max_dur", "X7_day_min")
 result_list = paste0(var_list, "_trend")
@@ -72,6 +72,7 @@ for (j in 1:length(var_list)){
     if (sum(!is.na(data[[var.t]]))>=30){
       data <- data[!is.na(data[[var.t]]),]
       data.p <- data[data$year>=1970,]
+      data.p <- data.p[data.p$year<=2019,] # cap data range for 2022 CESI release
       
       # Data requirements: some data 1970-1975, >=30 points, no gap over 10 years
       goodyears <- data.p$year[!is.na(data.p[[var.t]])]
@@ -94,17 +95,27 @@ for (j in 1:length(var_list)){
         }else{
           # Is hurdle necessary?
           hurdle <- FALSE #default to False
-          if (sum(data.p[[var.t]]==0) > 0){
+          print(hurdle)
+          print(hurdlechk)
+          if (sum(data.p[[var.t]]==0) >= 3){
             model2 <- tryCatch(hurdle(data.p[[var.t]]~data.p$year, data.p, dist="negbin", zero.dist = "negbin"),
-                               error=function(e){return(e)}, warning=function(w){return("B")})
+                               error=function(e){return("A")}, warning=function(w){return("B")})
+            model3 <- tryCatch(hurdle(pot_days~year, data.p, dist="negbin", zero.dist = "negbin"),
+                               error=function(e){return("A")}, warning=function(w){return("B")})
             
             if(!is.character(model2)){
               hurdlechk <- hurdletest(model2)[2,4]
+              print(hurdlechk)
               if(!is.nan(hurdlechk)){
                 hurdle <- ifelse(hurdlechk>0.1, TRUE, FALSE)
+                print(hurdle)
               }
             }
           }
+          print("ready to start test:")
+          print(hurdle)
+          print(hurdlechk)
+          
           if(hurdle){
             #Apply the hurdle model
             print("Hurdle test")
@@ -138,7 +149,7 @@ for (j in 1:length(var_list)){
   
   write.csv(snap.all, output_name, row.names = FALSE)
   
-  summary.to.shp(snap.all, paste0(var.t,"_trend"), "../../../00_Shapefiles")
+  # summary.to.shp(snap.all, paste0(var.t,"_trend"), "../../../00_Shapefiles")
   snap <-list()
 }
 
