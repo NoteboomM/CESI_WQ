@@ -89,33 +89,24 @@ for (j in 1:length(var_list)){
         }
         
         # Are there any zero values?
-        if((sum(data.p[[var.t]]==0)<3)&(var.t %in% c("X1_day_max", "ann_mean_yield", "X7_day_min"))){
+        if((sum(data.p[[var.t]]==0)<=1)&(var.t %in% c("X1_day_max", "ann_mean_yield", "X7_day_min"))){
           print("Mann-Kendall test")
           mk.test(var.t)
         }else{
           # Is hurdle necessary?
           hurdle <- FALSE #default to False
-          print(hurdle)
-          print(hurdlechk)
           if (sum(data.p[[var.t]]==0) >= 3){
             model2 <- tryCatch(hurdle(data.p[[var.t]]~data.p$year, data.p, dist="negbin", zero.dist = "negbin"),
                                error=function(e){return("A")}, warning=function(w){return("B")})
-            model3 <- tryCatch(hurdle(pot_days~year, data.p, dist="negbin", zero.dist = "negbin"),
-                               error=function(e){return("A")}, warning=function(w){return("B")})
-            
+
             if(!is.character(model2)){
               hurdlechk <- hurdletest(model2)[2,4]
-              print(hurdlechk)
               if(!is.nan(hurdlechk)){
                 hurdle <- ifelse(hurdlechk>0.1, TRUE, FALSE)
-                print(hurdle)
               }
             }
           }
-          print("ready to start test:")
-          print(hurdle)
-          print(hurdlechk)
-          
+
           if(hurdle){
             #Apply the hurdle model
             print("Hurdle test")
@@ -149,7 +140,7 @@ for (j in 1:length(var_list)){
   
   write.csv(snap.all, output_name, row.names = FALSE)
   
-  # summary.to.shp(snap.all, paste0(var.t,"_trend"), "../../../00_Shapefiles")
+  summary.to.shp(snap.all, paste0(var.t,"_trend"), "../../../00_Shapefiles")
   snap <-list()
 }
 

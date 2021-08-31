@@ -35,7 +35,7 @@ summary.to.shp <- function(metric.data, metric, path.shp){
   metricplot <- spTransform(metricplot, CRSobj = crs)
   
   outstring <- paste0(path.shp, "/RHBN_U_pts_", metric, "_Hydat_", version, ".shp")
-
+  
   if (!file.exists(outstring)){
     rgdal::writeOGR(metricplot, outstring,
              layer=basename(outstring),
