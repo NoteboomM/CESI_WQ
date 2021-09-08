@@ -1,8 +1,18 @@
 from qgis import processing
+"""
+Important note: QGIS version 3.16.7 seems to execute the IDW algorithm differently
+from QGIS import v3.10.2. The newer version seems to force the output surface towards
+zero even if surrounded by non-zero points, which leads to spurious 'red' patches in 
+the Arctic and parts of northern Ontario and the Prairies. This routine has been tested
+and run on version 3.10.2 for CESI-WQ to be released early 2022. Anyone working on 
+future updates/releases - pay attention to raster outputs as compared to sample points.
+"""
+
+print("Routine to run inverse distance weighted (IDW) interpolation\n on Annual Mean Yield Quantile data")
 
 metric = "ann_mean_yield"
 
-version = "2021-05"
+version = "2021-07"
 
 inshp = "C:/Users/noteboomm/Documents/CESI/00_Shapefiles/RHBN_U_pts_"+metric+"_Hydat_"+version+".shp"
 outstring = "C:/Users/noteboomm/Documents/CESI/Rasters/"+metric
@@ -38,3 +48,6 @@ for attrib in range(27,46):
                     'OUTPUT':outstring+'_'+str(year)+'_Hydat_'+version+'_RHBN-U_IDW5_10k_clip.tif'})
     
     os.remove('C:/Users/noteboomm/Documents/CESI/Rasters/_temp.tif')
+    
+    print("'OUTPUT':'"+outstring+str(year)+"_Hydat_"+version+"_RHBN-U_IDW5_10k.tif'\n interpolation and clipping complete\n")
+
