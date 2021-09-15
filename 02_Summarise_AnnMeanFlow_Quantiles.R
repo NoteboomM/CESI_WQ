@@ -1,9 +1,5 @@
 ###################################################################################################
 # CESI project part 8-Creating Summary Tables
-# Overall Descriptions: 
-# This section takes all the metrics calculated before to create summary tables containing
-# stations with a row for every station-parameter pair, and columns of summary stats
-# and result/percentile for each year 1970-2016 (or end of the data available).
 ###################################################################################################
 
 
