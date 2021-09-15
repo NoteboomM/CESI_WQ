@@ -3,6 +3,10 @@
 chk.hydat <- function(hydat.path = NULL){
   print("Ignore tidyhydat error on first run; package looks in default location.")
   
+  main_dir <- getwd()
+  
+  dir.create(file.path(main_dir, hydat.path))
+  
   library(tidyhydat)
   
   hy_file <- paste0(hydat.path,"/Hydat.sqlite3")
