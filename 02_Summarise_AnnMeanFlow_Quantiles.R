@@ -35,6 +35,7 @@ if (file.exists(paste0("../Variables/Summary.AnnMeanYield.csv"))){
   for (k in 1:length(stn.list.full)){
     var.name <- "Annual Mean Yield"
     var.t <- "ann_mean_yield"
+    var.in <- "ann_mean_flow"
     
     stn <- stn.list.full[k]
     print(stn)
@@ -46,13 +47,12 @@ if (file.exists(paste0("../Variables/Summary.AnnMeanYield.csv"))){
                            dimnames= list(NULL, c("STATION_NUMBER","variable","q25", "q75", "median"))))
     q$STATION_NUMBER <- stn
     q$variable <- var.t
-    # if variable needs it, scale variable by watershed size. Units will now be in mm/time,
-    # where time is either one year, 7 days, or one day.
+    # Scale variable by watershed size. Units will now be in mm.
 
     watershed <- stations[stations$STATION_NUMBER == stn, "Shp_Area"]
     time <-  365*24*3600
     
-    data[[var.t]] <- data[[var.t]]*time/(watershed*10^3) 
+    data[[var.t]] <- data[[var.in]]*time/(watershed*10^3) 
 
     # calculate quantiles, ranks, trends for each variable
     data.ref <- data %>% filter(year>=1981, year<=2010)
